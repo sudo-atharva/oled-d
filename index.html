@@ -15,30 +15,67 @@
       <button id="templateBtn">Templates</button>
     </div>
   </div>
-  <header id="editorHeader" style="display:none;">
-    <h1 id="projectTitle">Untitled Project</h1>
-    <nav>
-      <button id="backToHomeBtn">Home</button>
-      <button id="exportBtn">Export JSON</button>
+  <div id="appContainer" style="display:none;">
+    <nav class="topbar">
+      <div class="tabs">
+        <button class="tab active" id="tabMenuBuilder">Menu Builder</button>
+        <button class="tab" id="tabScreenEditor">Screen Editor</button>
+        <button class="tab" id="tabExportCode">Export Code</button>
+      </div>
+      <div class="controls">
+        <label for="oledType">OLED Type:</label>
+        <select id="oledType">
+          <option value="ssd1306_128x64">SSD1306 128x64</option>
+          <option value="sh1106_128x64">SH1106 128x64</option>
+        </select>
+        <label for="textScroll">Text Scroll:</label>
+        <select id="textScroll">
+          <option value="ltr">Left → Right</option>
+          <option value="rtl">Right → Left</option>
+        </select>
+        <label class="switch">
+          <input type="checkbox" id="scrollToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
     </nav>
-  </header>
-  <main id="editorMain" style="display:none;">
-    <section id="oledPreviewSection">
-      <h2>OLED Preview</h2>
-      <canvas id="oledCanvas" width="128" height="64"></canvas>
-      <div id="oledMenuPreview"></div>
-    </section>
-    <section id="menuSection">
-      <h2>Menu Editor</h2>
-      <div id="menuList"></div>
-      <button id="addMenuItemBtn">Add Menu Item</button>
-    </section>
-    <section id="screenEditorSection" style="display:none;">
-      <h2>Screen Editor</h2>
-      <div id="screenEditor"></div>
-      <button id="addScreenElementBtn">Add Element</button>
-    </section>
-  </main>
+    <main class="mainContent">
+      <section class="leftPanel">
+        <div class="panelCard">
+          <h2>OLED Preview</h2>
+          <div class="oledContainer">
+            <canvas id="oledCanvas" width="128" height="64"></canvas>
+            <div class="oledControls">
+              <button id="prevItem" class="controlBtn">↑</button>
+              <button id="nextItem" class="controlBtn">↓</button>
+            </div>
+          </div>
+          <div class="oledInfo">
+            <div class="infoRow">
+              <span class="infoLabel">Display:</span>
+              <span class="infoValue">128x64 OLED</span>
+            </div>
+            <div class="infoRow">
+              <span class="infoLabel">Selected:</span>
+              <span id="selectedIndex" class="infoValue">0</span>
+            </div>
+            <div class="infoRow">
+              <span class="infoLabel">Items:</span>
+              <span id="totalItems" class="infoValue">0</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="rightPanel">
+        <div class="panelCard">
+          <h2>Menu Items</h2>
+          <p class="desc">Create and manage your menu items. The center item will be highlighted in the preview.</p>
+          <button id="addMenuItemBtn" class="fullWidth"><span class="plus">+</span> Add Menu Item</button>
+          <div id="menuList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
   <script src="script.js"></script>
 </body>
-</html> 
+</html>
