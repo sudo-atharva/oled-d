@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OLED Menu Builder Web App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>OLED Menu Builder</h1>
+    <nav>
+      <button id="newProjectBtn">New Project</button>
+      <button id="exportBtn">Export JSON</button>
+    </nav>
+  </header>
+  <main>
+    <section id="menuSection">
+      <h2>Menu Items</h2>
+      <div id="menuList"></div>
+      <button id="addMenuItemBtn">Add Menu Item</button>
+    </section>
+    <section id="screenEditorSection">
+      <h2>Screen Editor</h2>
+      <div id="screenEditor"></div>
+      <button id="addScreenElementBtn">Add Element</button>
+    </section>
+    <section id="oledPreviewSection">
+      <h2>OLED Preview</h2>
+      <canvas id="oledCanvas" width="128" height="64"></canvas>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html> 
