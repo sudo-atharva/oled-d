@@ -2,137 +2,119 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OLED Menu Builder Web App</title>
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <title>OLED Menu Builder</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="landingOverlay">
-    <div class="landing-card">
-      <h1>OLED Menu Builder</h1>
-      <button id="createProjectBtn">Create New Project</button>
-      <button id="openProjectBtn">Open Project</button>
-      <button id="templateBtn">Templates</button>
-    </div>
-  </div>
-  <div id="appContainer" style="display:none;">
-    <nav class="topbar">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <span style="font-size:1.3rem;color:#00bfff;font-weight:600;">&#128187; OLED Menu Builder</span>
       <div class="tabs">
         <button class="tab active" id="tabMenuBuilder">Menu Builder</button>
         <button class="tab" id="tabScreenEditor">Screen Editor</button>
         <button class="tab" id="tabExportCode">Export Code</button>
       </div>
-      <div class="controls">
-        <label for="oledType">OLED Type:</label>
-        <select id="oledType">
-          <option value="ssd1306_128x64">SSD1306 128x64</option>
-          <option value="sh1106_128x64">SH1106 128x64</option>
+    </div>
+    <div style="display:flex;align-items:center;gap:1.5rem;">
+      <label for="oledType">OLED Type:</label>
+      <select id="oledType">
+        <option value="ssd1306_128x64">SSD1306 128x64</option>
+        <option value="sh1106_128x64">SH1106 128x64</option>
+      </select>
+      <label for="textScroll">Text Scroll:</label>
+      <select id="textScroll">
+        <option value="ltr">Left → Right</option>
+        <option value="rtl">Right → Left</option>
+      </select>
+      <label class="switch">
+        <input type="checkbox" id="scrollToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+  <!-- Menu Builder Page -->
+  <div class="container menu-builder active" id="menuBuilderPage">
+    <div class="card">
+      <div class="section-title">OLED Preview</div>
+      <div class="oled-preview">
+        <div class="oled-canvas-box">
+          <canvas id="oledCanvas" width="128" height="64"></canvas>
+        </div>
+        <div class="oled-controls">
+          <button id="prevItem">&#8593;</button>
+          <button id="nextItem">&#8595;</button>
+        </div>
+        <div style="margin-top:1rem;text-align:center;">
+          <span style="color:#00bfff;">128x64 OLED Display</span><br>
+          <span style="color:#b0b0b0;font-size:0.95rem;">Viewing: Menu (Use arrows to navigate)</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Menu Items</div>
+      <div class="desc">Create and manage your menu items. The center item will be highlighted in the preview.</div>
+      <button id="addMenuItemBtn" class="fullWidth"><span class="plus">+</span> Add Menu Item</button>
+      <div id="menuList" class="menu-list"></div>
+    </div>
+  </div>
+  <!-- Screen Editor Page -->
+  <div class="container screen-editor" id="screenEditorPage">
+    <div class="card" style="max-width:320px;">
+      <div class="section-title">Screens</div>
+      <ul id="screenList" class="screen-list"></ul>
+      <button id="addScreenBtn" class="fullWidth">+ Add Screen</button>
+    </div>
+    <div class="card">
+      <div class="section-title">Screen Canvas</div>
+      <div class="desc">Draw pixels, add text, or import images. Choose data type and font for this screen.</div>
+      <div class="screen-canvas-box">
+        <canvas id="screenCanvas" width="128" height="64"></canvas>
+      </div>
+      <div class="screen-controls">
+        <button id="clearScreenBtn">Clear</button>
+        <button id="importImageBtn">Import Image</button>
+        <input type="file" id="importImageInput" style="display:none" accept="image/png, image/bmp" />
+        <label for="screenDataType">Data Type:</label>
+        <select id="screenDataType">
+          <option value="uint8_t">uint8_t</option>
+          <option value="uint16_t">uint16_t</option>
         </select>
-        <label for="fontSelect">Font:</label>
-        <select id="fontSelect">
+        <label for="screenFont">Font:</label>
+        <select id="screenFont">
           <option value="u8g2_font_ncenB14_tr">ncenB14</option>
           <option value="u8g2_font_6x10_tr">6x10</option>
           <option value="u8g2_font_courB08_tr">courB08</option>
           <option value="u8g2_font_helvB12_tr">helvB12</option>
         </select>
-        <label for="textScroll">Text Scroll:</label>
-        <select id="textScroll">
-          <option value="ltr">Left → Right</option>
-          <option value="rtl">Right → Left</option>
-        </select>
-        <label class="switch">
-          <input type="checkbox" id="scrollToggle">
-          <span class="slider"></span>
-        </label>
       </div>
-    </nav>
-    <main class="mainContent">
-      <section class="leftPanel">
-        <div class="panelCard">
-          <h2>OLED Preview</h2>
-          <div class="oledContainer">
-            <canvas id="oledCanvas" width="128" height="64"></canvas>
-            <div class="oledControls">
-              <button id="prevItem" class="controlBtn">↑</button>
-              <button id="nextItem" class="controlBtn">↓</button>
-            </div>
-          </div>
-          <div class="oledInfo">
-            <div class="infoRow">
-              <span class="infoLabel">Display:</span>
-              <span class="infoValue">128x64 OLED</span>
-            </div>
-            <div class="infoRow">
-              <span class="infoLabel">Selected:</span>
-              <span id="selectedIndex" class="infoValue">0</span>
-            </div>
-            <div class="infoRow">
-              <span class="infoLabel">Items:</span>
-              <span id="totalItems" class="infoValue">0</span>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section class="rightPanel">
-        <div class="panelCard">
-          <h2>Menu Items</h2>
-          <p class="desc">Create and manage your menu items. The center item will be highlighted in the preview.</p>
-          <button id="addMenuItemBtn" class="fullWidth"><span class="plus">+</span> Add Menu Item</button>
-          <div id="menuList"></div>
-          <input type="file" id="iconUpload" style="display:none" accept="image/png, image/bmp" />
-        </div>
-      </section>
-    </main>
-    <section id="screenEditorSection" style="display:none;">
-      <div class="panelCard">
-        <h2>Screen Editor</h2>
-        <p class="desc">Design custom screens for your OLED display. You can add, rename, delete, and edit screens. Draw pixels, add text, or import images.</p>
-        <div style="display:flex;gap:2rem;align-items:flex-start;">
-          <div style="min-width:180px;">
-            <h3>Screens</h3>
-            <ul id="screenList" style="list-style:none;padding:0;"></ul>
-            <button id="addScreenBtn" class="fullWidth">+ Add Screen</button>
-            <label for="screenDataType">Data Type:</label>
-            <select id="screenDataType">
-              <option value="uint8_t">uint8_t</option>
-              <option value="uint16_t">uint16_t</option>
-            </select>
-          </div>
-          <div>
-            <canvas id="screenCanvas" width="128" height="64" style="border:1px solid #333;background:#000;"></canvas>
-            <div style="margin-top:1rem;">
-              <button id="clearScreenBtn">Clear</button>
-              <button id="importImageBtn">Import Image</button>
-              <input type="file" id="importImageInput" style="display:none" accept="image/png, image/bmp" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <section id="exportCodeSection" style="display:none;">
-      <div class="panelCard">
-        <h2>Export Code</h2>
-        <p class="desc">Export your menu and screen designs as Arduino/C++ code or .c/.h files for u8g2 library.</p>
-        <label for="exportFormat">Export Format:</label>
-        <select id="exportFormat">
-          <option value="arduino">Arduino Sketch</option>
-          <option value="ch">.c/.h Files</option>
-          <option value="both">Both</option>
-        </select>
-        <label for="exportDataType">Data Type:</label>
-        <select id="exportDataType">
-          <option value="uint8_t">uint8_t</option>
-          <option value="uint16_t">uint16_t</option>
-        </select>
-        <textarea id="exportedCode" style="width:100%;height:300px;"></textarea>
-        <div style="display:flex;gap:1rem;margin-top:1rem;">
-          <button id="copyExportedCodeBtn" class="fullWidth">Copy Code</button>
-          <button id="downloadCBtn" class="fullWidth">Download .c</button>
-          <button id="downloadHBtn" class="fullWidth">Download .h</button>
-        </div>
-      </div>
-    </section>
+    </div>
   </div>
+  <!-- Export Code Page -->
+  <div class="container export-code" id="exportCodePage">
+    <div class="card" style="max-width:700px;">
+      <div class="section-title">Export Code</div>
+      <div class="desc">Export your menu and screen designs as Arduino/C++ code or .c/.h files for u8g2 library.</div>
+      <label for="exportFormat">Export Format:</label>
+      <select id="exportFormat">
+        <option value="arduino">Arduino Sketch</option>
+        <option value="ch">.c/.h Files</option>
+        <option value="both">Both</option>
+      </select>
+      <label for="exportDataType">Data Type:</label>
+      <select id="exportDataType">
+        <option value="uint8_t">uint8_t</option>
+        <option value="uint16_t">uint16_t</option>
+      </select>
+      <textarea id="exportedCode"></textarea>
+      <div class="export-controls">
+        <button id="copyExportedCodeBtn">Copy Code</button>
+        <button id="downloadCBtn">Download .c</button>
+        <button id="downloadHBtn">Download .h</button>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="iconUpload" style="display:none" accept="image/png, image/bmp" />
   <script src="script.js"></script>
 </body>
 </html>
