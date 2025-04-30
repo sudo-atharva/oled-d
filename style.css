@@ -49,4 +49,137 @@ section {
 }
 button {
   margin-top: 1rem;
+}
+#landingOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #0a0a0aee;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.landing-card {
+  background: #111;
+  border-radius: 16px;
+  box-shadow: 0 0 32px #00ffe7aa, 0 0 4px #00ffe7;
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 320px;
+}
+.landing-card h1 {
+  color: #00ffe7;
+  margin-bottom: 2rem;
+  text-shadow: 0 0 8px #00ffe7;
+}
+.landing-card button {
+  background: #181818;
+  color: #00ffe7;
+  border: 2px solid #00ffe7;
+  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 0 8px #00ffe744;
+}
+.landing-card button:hover {
+  background: #00ffe7;
+  color: #181818;
+}
+#editorHeader {
+  background: #181818;
+  border-bottom: 2px solid #00ffe7;
+  box-shadow: 0 2px 16px #00ffe744;
+}
+#editorHeader h1 {
+  color: #00ffe7;
+  text-shadow: 0 0 8px #00ffe7;
+}
+#editorHeader nav button {
+  background: #111;
+  color: #00ffe7;
+  border: 1px solid #00ffe7;
+  border-radius: 6px;
+  margin-left: 1rem;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  box-shadow: 0 0 4px #00ffe744;
+}
+#editorHeader nav button:hover {
+  background: #00ffe7;
+  color: #181818;
+}
+#editorMain {
+  display: flex;
+  gap: 2.5rem;
+  padding: 2.5rem 3vw;
+  min-height: 80vh;
+}
+#oledPreviewSection {
+  flex: 1.2;
+  background: #111;
+  border-radius: 12px;
+  box-shadow: 0 0 16px #00ffe744;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#oledCanvas {
+  background: #000;
+  border: 2px solid #00ffe7;
+  margin-top: 1rem;
+  image-rendering: pixelated;
+  box-shadow: 0 0 16px #00ffe744;
+}
+#oledMenuPreview {
+  margin-top: 2rem;
+  width: 100%;
+  min-height: 80px;
+  color: #fff;
+  font-family: monospace;
+  text-align: center;
+}
+#menuSection {
+  flex: 1.5;
+  background: #181818;
+  border-radius: 12px;
+  box-shadow: 0 0 16px #00ffe744;
+  padding: 2rem 1.5rem;
+}
+.menu-item {
+  background: #232323;
+  color: #00ffe7;
+  border: 1px solid #00ffe7;
+  border-radius: 6px;
+  margin: 0.5rem 0;
+  padding: 0.7rem 1rem;
+  font-size: 1.1rem;
+  box-shadow: 0 0 4px #00ffe744;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.menu-item.selected {
+  background: #00ffe7;
+  color: #181818;
+  box-shadow: 0 0 12px #00ffe7;
+}
+#addMenuItemBtn {
+  background: #111;
+  color: #00ffe7;
+  border: 1px solid #00ffe7;
+  border-radius: 6px;
+  margin-top: 1rem;
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  box-shadow: 0 0 4px #00ffe744;
+}
+#addMenuItemBtn:hover {
+  background: #00ffe7;
+  color: #181818;
 } 

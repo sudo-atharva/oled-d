@@ -7,27 +7,36 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>OLED Menu Builder</h1>
+  <div id="landingOverlay">
+    <div class="landing-card">
+      <h1>OLED Menu Builder</h1>
+      <button id="createProjectBtn">Create New Project</button>
+      <button id="openProjectBtn">Open Project</button>
+      <button id="templateBtn">Templates</button>
+    </div>
+  </div>
+  <header id="editorHeader" style="display:none;">
+    <h1 id="projectTitle">Untitled Project</h1>
     <nav>
-      <button id="newProjectBtn">New Project</button>
+      <button id="backToHomeBtn">Home</button>
       <button id="exportBtn">Export JSON</button>
     </nav>
   </header>
-  <main>
-    <section id="menuSection">
-      <h2>Menu Items</h2>
-      <div id="menuList"></div>
-      <button id="addMenuItemBtn">Add Menu Item</button>
-    </section>
-    <section id="screenEditorSection">
-      <h2>Screen Editor</h2>
-      <div id="screenEditor"></div>
-      <button id="addScreenElementBtn">Add Element</button>
-    </section>
+  <main id="editorMain" style="display:none;">
     <section id="oledPreviewSection">
       <h2>OLED Preview</h2>
       <canvas id="oledCanvas" width="128" height="64"></canvas>
+      <div id="oledMenuPreview"></div>
+    </section>
+    <section id="menuSection">
+      <h2>Menu Editor</h2>
+      <div id="menuList"></div>
+      <button id="addMenuItemBtn">Add Menu Item</button>
+    </section>
+    <section id="screenEditorSection" style="display:none;">
+      <h2>Screen Editor</h2>
+      <div id="screenEditor"></div>
+      <button id="addScreenElementBtn">Add Element</button>
     </section>
   </main>
   <script src="script.js"></script>
