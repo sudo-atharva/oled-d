@@ -28,6 +28,13 @@
           <option value="ssd1306_128x64">SSD1306 128x64</option>
           <option value="sh1106_128x64">SH1106 128x64</option>
         </select>
+        <label for="fontSelect">Font:</label>
+        <select id="fontSelect">
+          <option value="u8g2_font_ncenB14_tr">ncenB14</option>
+          <option value="u8g2_font_6x10_tr">6x10</option>
+          <option value="u8g2_font_courB08_tr">courB08</option>
+          <option value="u8g2_font_helvB12_tr">helvB12</option>
+        </select>
         <label for="textScroll">Text Scroll:</label>
         <select id="textScroll">
           <option value="ltr">Left → Right</option>
@@ -72,9 +79,25 @@
           <p class="desc">Create and manage your menu items. The center item will be highlighted in the preview.</p>
           <button id="addMenuItemBtn" class="fullWidth"><span class="plus">+</span> Add Menu Item</button>
           <div id="menuList"></div>
+          <input type="file" id="iconUpload" style="display:none" accept="image/png, image/bmp" />
         </div>
       </section>
     </main>
+    <section id="screenEditorSection" style="display:none;">
+      <div class="panelCard">
+        <h2>Screen Editor</h2>
+        <p class="desc">Design custom screens for your OLED display. (Feature coming soon!)</p>
+        <div id="screenEditorContent"></div>
+      </div>
+    </section>
+    <section id="exportCodeSection" style="display:none;">
+      <div class="panelCard">
+        <h2>Export Code</h2>
+        <p class="desc">Export your menu and screen designs as Arduino/C++ code for u8g2 library.</p>
+        <textarea id="exportedCode" style="width:100%;height:300px;"></textarea>
+        <button id="copyExportedCodeBtn" class="fullWidth">Copy Code</button>
+      </div>
+    </section>
   </div>
   <script src="script.js"></script>
 </body>
