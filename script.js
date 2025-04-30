@@ -258,8 +258,206 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { copyExportedCodeBtn.textContent = 'Copy Code'; }, 1200);
   });
 
-  // Placeholder for future screen editor logic
-  // ...
+  // --- Screen Editor State ---
+  const screenList = document.getElementById('screenList');
+  const addScreenBtn = document.getElementById('addScreenBtn');
+  const screenCanvas = document.getElementById('screenCanvas');
+  const screenCtx = screenCanvas.getContext('2d');
+  const clearScreenBtn = document.getElementById('clearScreenBtn');
+  const importImageBtn = document.getElementById('importImageBtn');
+  const importImageInput = document.getElementById('importImageInput');
+  const screenDataType = document.getElementById('screenDataType');
+  let screens = [];
+  let selectedScreenIndex = 0;
+  let screenPixelSize = 2; // for drawing
+  let isDrawing = false;
+  let drawColor = 1;
+
+  function createEmptyScreen(name = "Screen", w = 128, h = 64) {
+    return {
+      name,
+      w,
+      h,
+      data: Array.from({length: h}, () => Array(w).fill(0)),
+    };
+  }
+
+  function renderScreenList() {
+    screenList.innerHTML = '';
+    screens.forEach((screen, idx) => {
+      const li = document.createElement('li');
+      li.style.marginBottom = '0.5rem';
+      li.innerHTML = `<input value="${screen.name}" data-idx="${idx}" class="screenNameInput" style="width:90px;"> ` +
+        `<button class="selectScreenBtn" data-idx="${idx}" ${idx===selectedScreenIndex?'disabled':''}>Select</button> ` +
+        `<button class="deleteScreenBtn" data-idx="${idx}">🗑️</button>`;
+      if(idx===selectedScreenIndex) li.style.fontWeight = 'bold';
+      screenList.appendChild(li);
+    });
+  }
+
+  function drawScreenCanvas() {
+    const screen = screens[selectedScreenIndex];
+    screenCtx.clearRect(0,0,screenCanvas.width,screenCanvas.height);
+    for(let y=0;y<screen.h;y++){
+      for(let x=0;x<screen.w;x++){
+        if(screen.data[y][x]){
+          screenCtx.fillStyle = '#fff';
+          screenCtx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+  }
+
+  addScreenBtn.addEventListener('click',()=>{
+    screens.push(createEmptyScreen(`Screen${screens.length+1}`));
+    selectedScreenIndex = screens.length-1;
+    renderScreenList();
+    drawScreenCanvas();
+  });
+  screenList.addEventListener('click',e=>{
+    if(e.target.classList.contains('selectScreenBtn')){
+      selectedScreenIndex = parseInt(e.target.dataset.idx);
+      renderScreenList();
+      drawScreenCanvas();
+    } else if(e.target.classList.contains('deleteScreenBtn')){
+      const idx = parseInt(e.target.dataset.idx);
+      screens.splice(idx,1);
+      if(selectedScreenIndex>=screens.length) selectedScreenIndex = screens.length-1;
+      renderScreenList();
+      drawScreenCanvas();
+    }
+  });
+  screenList.addEventListener('input',e=>{
+    if(e.target.classList.contains('screenNameInput')){
+      const idx = parseInt(e.target.dataset.idx);
+      screens[idx].name = e.target.value;
+    }
+  });
+  screenCanvas.addEventListener('mousedown',e=>{
+    isDrawing = true;
+    const rect = screenCanvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX-rect.left));
+    const y = Math.floor((e.clientY-rect.top));
+    togglePixel(x,y);
+  });
+  screenCanvas.addEventListener('mousemove',e=>{
+    if(isDrawing){
+      const rect = screenCanvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX-rect.left));
+      const y = Math.floor((e.clientY-rect.top));
+      togglePixel(x,y);
+    }
+  });
+  document.addEventListener('mouseup',()=>{isDrawing=false;});
+  function togglePixel(x,y){
+    const screen = screens[selectedScreenIndex];
+    if(x>=0&&x<screen.w&&y>=0&&y<screen.h){
+      screen.data[y][x] = 1-screen.data[y][x];
+      drawScreenCanvas();
+    }
+  }
+  clearScreenBtn.addEventListener('click',()=>{
+    const screen = screens[selectedScreenIndex];
+    for(let y=0;y<screen.h;y++) for(let x=0;x<screen.w;x++) screen.data[y][x]=0;
+    drawScreenCanvas();
+  });
+  importImageBtn.addEventListener('click',()=>{importImageInput.click();});
+  importImageInput.addEventListener('change',e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const img = new Image();
+    img.onload = ()=>{
+      const screen = screens[selectedScreenIndex];
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = screen.w;
+      tempCanvas.height = screen.h;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(img,0,0,screen.w,screen.h);
+      const imgData = tempCtx.getImageData(0,0,screen.w,screen.h).data;
+      for(let y=0;y<screen.h;y++){
+        for(let x=0;x<screen.w;x++){
+          const i = (y*screen.w+x)*4;
+          const v = (imgData[i]+imgData[i+1]+imgData[i+2])/3;
+          screen.data[y][x] = v>128?0:1;
+        }
+      }
+      drawScreenCanvas();
+    };
+    const reader = new FileReader();
+    reader.onload = e=>{img.src = e.target.result;};
+    reader.readAsDataURL(file);
+  });
+  // --- Export Code Enhancements ---
+  const exportFormat = document.getElementById('exportFormat');
+  const exportDataType = document.getElementById('exportDataType');
+  const downloadCBtn = document.getElementById('downloadCBtn');
+  const downloadHBtn = document.getElementById('downloadHBtn');
+  function screenToCArray(screen, dtype) {
+    let arr = [];
+    let bits = dtype==='uint8_t'?8:16;
+    for(let y=0;y<screen.h;y++){
+      for(let x=0;x<screen.w;x+=bits){
+        let v = 0;
+        for(let b=0;b<bits;b++){
+          if(x+b<screen.w && screen.data[y][x+b]) v |= (1<<(bits-1-b));
+        }
+        arr.push(v);
+      }
+    }
+    return arr;
+  }
+  function generateExportCode() {
+    const dtype = exportDataType.value;
+    let code = `// OLED Menu Code (u8g2)\n`;
+    code += 'const char* menuItems[] = {\n';
+    menuItems.forEach(item => {
+      code += `  \"${item.label.replace(/\"/g, '\\\"')}\",\n`;
+    });
+    code += '};\n';
+    code += `const uint8_t menuLength = ${menuItems.length};\n`;
+    // Export screens
+    screens.forEach((screen, idx) => {
+      const arr = screenToCArray(screen, dtype);
+      code += `// Screen: ${screen.name}\n`;
+      code += `${dtype} ${screen.name.replace(/\W/g,'_')}[${arr.length}] = {`;
+      code += arr.join(',');
+      code += '};\n';
+    });
+    code += '\n// Add your menu and screen rendering logic here using u8g2\n';
+    exportedCode.value = code;
+  }
+  exportFormat.addEventListener('change', generateExportCode);
+  exportDataType.addEventListener('change', generateExportCode);
+  // Download .c/.h files
+  function downloadFile(filename, content) {
+    const blob = new Blob([content], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }
+  downloadCBtn.addEventListener('click',()=>{
+    let c = '';
+    const dtype = exportDataType.value;
+    screens.forEach((screen, idx) => {
+      const arr = screenToCArray(screen, dtype);
+      c += `// Screen: ${screen.name}\n`;
+      c += `${dtype} ${screen.name.replace(/\W/g,'_')}[${arr.length}] = {`;
+      c += arr.join(',');
+      c += '};\n';
+    });
+    downloadFile('screens.c', c);
+  });
+  downloadHBtn.addEventListener('click',()=>{
+    let h = '';
+    const dtype = exportDataType.value;
+    screens.forEach((screen, idx) => {
+      const arr = screenToCArray(screen, dtype);
+      h += `extern ${dtype} ${screen.name.replace(/\W/g,'_')}[${arr.length}];\n`;
+    });
+    downloadFile('screens.h', h);
+  });
 
   // Initialize
   initOLED();

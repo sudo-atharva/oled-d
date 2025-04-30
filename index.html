@@ -86,16 +86,50 @@
     <section id="screenEditorSection" style="display:none;">
       <div class="panelCard">
         <h2>Screen Editor</h2>
-        <p class="desc">Design custom screens for your OLED display. (Feature coming soon!)</p>
-        <div id="screenEditorContent"></div>
+        <p class="desc">Design custom screens for your OLED display. You can add, rename, delete, and edit screens. Draw pixels, add text, or import images.</p>
+        <div style="display:flex;gap:2rem;align-items:flex-start;">
+          <div style="min-width:180px;">
+            <h3>Screens</h3>
+            <ul id="screenList" style="list-style:none;padding:0;"></ul>
+            <button id="addScreenBtn" class="fullWidth">+ Add Screen</button>
+            <label for="screenDataType">Data Type:</label>
+            <select id="screenDataType">
+              <option value="uint8_t">uint8_t</option>
+              <option value="uint16_t">uint16_t</option>
+            </select>
+          </div>
+          <div>
+            <canvas id="screenCanvas" width="128" height="64" style="border:1px solid #333;background:#000;"></canvas>
+            <div style="margin-top:1rem;">
+              <button id="clearScreenBtn">Clear</button>
+              <button id="importImageBtn">Import Image</button>
+              <input type="file" id="importImageInput" style="display:none" accept="image/png, image/bmp" />
+            </div>
+          </div>
+        </div>
       </div>
     </section>
     <section id="exportCodeSection" style="display:none;">
       <div class="panelCard">
         <h2>Export Code</h2>
-        <p class="desc">Export your menu and screen designs as Arduino/C++ code for u8g2 library.</p>
+        <p class="desc">Export your menu and screen designs as Arduino/C++ code or .c/.h files for u8g2 library.</p>
+        <label for="exportFormat">Export Format:</label>
+        <select id="exportFormat">
+          <option value="arduino">Arduino Sketch</option>
+          <option value="ch">.c/.h Files</option>
+          <option value="both">Both</option>
+        </select>
+        <label for="exportDataType">Data Type:</label>
+        <select id="exportDataType">
+          <option value="uint8_t">uint8_t</option>
+          <option value="uint16_t">uint16_t</option>
+        </select>
         <textarea id="exportedCode" style="width:100%;height:300px;"></textarea>
-        <button id="copyExportedCodeBtn" class="fullWidth">Copy Code</button>
+        <div style="display:flex;gap:1rem;margin-top:1rem;">
+          <button id="copyExportedCodeBtn" class="fullWidth">Copy Code</button>
+          <button id="downloadCBtn" class="fullWidth">Download .c</button>
+          <button id="downloadHBtn" class="fullWidth">Download .h</button>
+        </div>
       </div>
     </section>
   </div>

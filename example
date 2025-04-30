@@ -1,0 +1,2124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OLED Menu Builder</title>
+  <meta name="description" content="Design menus for OLED displays on microcontrollers like ESP32 with SSD1306">
+  
+  <!-- Tailwind CDN for styles -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    /* Base styles */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #f5f5f5;
+      color: #1a1a1a;
+    }
+    
+    /* Custom colors */
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --bg-color: #ffffff;
+      --text-color: #0f172a;
+      --border-color: #e2e8f0;
+      --muted: #64748b;
+    }
+    
+    /* OLED Canvas */
+    #oled-preview {
+      background-color: #000;
+      border-radius: 4px;
+    }
+    
+    /* Button styles */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+    
+    .btn-outline:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Card styles */
+    .card {
+      background-color: var(--bg-color);
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Form controls */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    
+    .form-input, .form-select {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-color);
+    }
+    
+    /* Menu item styles */
+    .menu-item {
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      border: 1px solid var(--border-color);
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .menu-item:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .menu-item.selected {
+      border-color: var(--primary);
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+    
+    /* Screen element styles */
+    .screen-element {
+      position: absolute;
+      padding: 2px;
+      border: 1px dashed rgba(255, 255, 255, 0.3);
+      cursor: move;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-size: 10px;
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1rem;
+    }
+    
+    .tab {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-weight: 500;
+    }
+    
+    .tab.active {
+      border-bottom: 2px solid var(--primary);
+      color: var(--primary);
+    }
+    
+    /* Toast notification container */
+    #toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 1000;
+    }
+    
+    .toast {
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin-bottom: 0.5rem;
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 300px;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .toast-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    
+    .toast-success {
+      border-left: 4px solid #10b981;
+    }
+    
+    .toast-error {
+      border-left: 4px solid #ef4444;
+    }
+    
+    /* Dialogs */
+    .dialog-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    
+    .dialog {
+      background-color: var(--bg-color);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .dialog-header {
+      margin-bottom: 1rem;
+    }
+    
+    .dialog-title {
+      font-weight: 600;
+      font-size: 1.25rem;
+    }
+    
+    .dialog-body {
+      margin-bottom: 1.5rem;
+    }
+    
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+    
+    /* Code syntax highlighting */
+    pre.code {
+      background-color: #282c34;
+      color: #abb2bf;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      overflow-x: auto;
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    
+    pre.code .keyword {
+      color: #c678dd;
+    }
+    
+    pre.code .function {
+      color: #61afef;
+    }
+    
+    pre.code .string {
+      color: #98c379;
+    }
+    
+    pre.code .comment {
+      color: #5c6370;
+    }
+    
+    pre.code .number {
+      color: #d19a66;
+    }
+    
+    /* Special OLED font styling */
+    .oled-text {
+      font-family: monospace;
+      white-space: pre;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .layout-cols {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <header class="bg-white border-b border-gray-200">
+    <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <svg 
+          class="w-8 h-8 text-blue-500" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          stroke-width="2" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+        >
+          <rect width="18" height="12" x="3" y="6" rx="2" />
+          <line x1="7" y1="12" x2="17" y2="12" />
+          <line x1="7" y1="16" x2="12" y2="16" />
+        </svg>
+        <h1 class="text-xl font-bold">OLED Menu Builder</h1>
+      </div>
+      <div class="flex gap-2">
+        <button id="new-project-btn" class="btn btn-outline flex items-center">
+          <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          New Project
+        </button>
+        <button id="save-project-btn" class="btn btn-outline flex items-center">
+          <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          Save Project
+        </button>
+        <button id="load-project-btn" class="btn btn-outline flex items-center">
+          <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Load Project
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 container mx-auto px-4 py-6 flex flex-col">
+    <div class="tabs">
+      <div class="tab active" data-tab="menu">Menu Builder</div>
+      <div class="tab" data-tab="screen">Screen Editor</div>
+      <div class="tab" data-tab="export">Export Code</div>
+    </div>
+    
+    <div class="flex flex-col md:flex-row gap-6 layout-cols">
+      <!-- Left Panel - Preview -->
+      <div class="card w-full md:w-1/3 md:h-[520px] flex-shrink-0">
+        <div class="p-4 h-full flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-lg font-semibold">OLED Preview</h2>
+            <div class="flex items-center gap-2">
+              <label class="text-sm whitespace-nowrap">
+                OLED Type:
+              </label>
+              <select id="display-type" class="form-select w-[160px]">
+                <option value="SSD1306_128x64">SSD1306 128x64</option>
+                <option value="SSD1306_128x32">SSD1306 128x32</option>
+                <option value="SH1106_128x64">SH1106 128x64</option>
+                <option value="SSD1309_128x64">SSD1309 128x64</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex-1 flex items-center justify-center bg-black p-4 rounded-md">
+            <canvas id="oled-preview" width="128" height="64"></canvas>
+          </div>
+          <div class="mt-2 flex items-center justify-end">
+            <div class="flex items-center gap-2">
+              <label for="scroll-direction" class="text-sm whitespace-nowrap">
+                Text Scroll: <span id="scroll-direction-text">Right→Left</span>
+              </label>
+              <div class="relative inline-block w-10 align-middle select-none">
+                <input type="checkbox" id="scroll-direction" class="sr-only" />
+                <div class="block h-6 rounded-full bg-gray-200 w-10"></div>
+                <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel - Editors -->
+      <div class="flex-1">
+        <!-- Menu Builder Tab Content -->
+        <div class="tab-content" id="menu-tab">
+          <div class="grid md:grid-cols-2 gap-6">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Menu Items</h3>
+                <button id="add-menu-item-btn" class="btn btn-primary">
+                  <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  Add Item
+                </button>
+              </div>
+              <div id="menu-items-list" class="space-y-2">
+                <!-- Menu items will be added here -->
+              </div>
+            </div>
+            
+            <div>
+              <h3 class="text-lg font-semibold mb-4">Edit Menu Item</h3>
+              <div id="menu-item-editor" class="space-y-4">
+                <p id="no-menu-item-selected" class="text-gray-500">Select a menu item to edit</p>
+                <!-- Menu item editor will be shown here -->
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Screen Editor Tab Content -->
+        <div class="tab-content hidden" id="screen-tab">
+          <div class="grid md:grid-cols-2 gap-6">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Screen Elements</h3>
+                <button id="add-screen-element-btn" class="btn btn-primary">
+                  <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  Add Element
+                </button>
+              </div>
+              <div id="screen-elements-list" class="space-y-2">
+                <!-- Screen elements will be added here -->
+              </div>
+            </div>
+            
+            <div>
+              <h3 class="text-lg font-semibold mb-4">Edit Element</h3>
+              <div id="screen-element-editor" class="space-y-4">
+                <p id="no-screen-element-selected" class="text-gray-500">Select a screen element to edit</p>
+                <!-- Screen element editor will be shown here -->
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Export Tab Content -->
+        <div class="tab-content hidden" id="export-tab">
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-semibold mb-2">C Header File</h3>
+              <div class="relative">
+                <pre id="c-header-code" class="code"></pre>
+                <button class="btn btn-outline absolute top-2 right-2" onclick="copyCode('c-header-code')">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <h3 class="text-lg font-semibold mb-2">C Implementation File</h3>
+              <div class="relative">
+                <pre id="c-implementation-code" class="code"></pre>
+                <button class="btn btn-outline absolute top-2 right-2" onclick="copyCode('c-implementation-code')">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <h3 class="text-lg font-semibold mb-2">Arduino Sketch</h3>
+              <div class="relative">
+                <pre id="arduino-code" class="code"></pre>
+                <button class="btn btn-outline absolute top-2 right-2" onclick="copyCode('arduino-code')">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="py-4 border-t border-gray-200">
+    <div class="container mx-auto px-4 text-center text-sm text-gray-500">
+      OLED Menu Builder - Design menus for OLED displays on microcontrollers like ESP32 with SSD1306<br>
+      Made with ❤️ by <a href="https://github.com/sudo-atharva" class="text-blue-500 hover:underline" target="_blank">Atharva Tikle</a>
+    </div>
+  </footer>
+
+  <!-- Dialogs -->
+  <div id="new-project-dialog" class="dialog-backdrop hidden">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Create New Project</h3>
+      </div>
+      <div class="dialog-body">
+        <div class="form-group">
+          <label for="new-project-name" class="form-label">Project Name</label>
+          <input type="text" id="new-project-name" class="form-input" placeholder="My OLED Menu">
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn btn-outline" onclick="hideDialog('new-project-dialog')">Cancel</button>
+        <button class="btn btn-primary" onclick="createNewProject()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="load-project-dialog" class="dialog-backdrop hidden">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Load Project</h3>
+      </div>
+      <div class="dialog-body">
+        <div id="saved-projects-list" class="space-y-2">
+          <!-- Saved projects will be listed here -->
+        </div>
+        <p id="no-saved-projects" class="text-center p-4 border border-dashed rounded-md hidden">
+          No saved projects found
+        </p>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn btn-outline" onclick="hideDialog('load-project-dialog')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="add-menu-item-dialog" class="dialog-backdrop hidden">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Add Menu Item</h3>
+      </div>
+      <div class="dialog-body">
+        <div class="form-group">
+          <label for="menu-item-label" class="form-label">Label</label>
+          <input type="text" id="menu-item-label" class="form-input" placeholder="Item Label">
+        </div>
+        <div class="form-group">
+          <label for="menu-item-icon" class="form-label">Icon</label>
+          <select id="menu-item-icon" class="form-select">
+            <option value="icon:none">None</option>
+            <option value="icon:knob">Knob</option>
+            <option value="icon:gauge">Gauge</option>
+            <option value="icon:sensor">Sensor</option>
+            <option value="icon:settings">Settings</option>
+            <option value="icon:wifi">WiFi</option>
+            <option value="icon:bluetooth">Bluetooth</option>
+            <option value="icon:temperature">Temperature</option>
+          </select>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn btn-outline" onclick="hideDialog('add-menu-item-dialog')">Cancel</button>
+        <button class="btn btn-primary" onclick="addMenuItem()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="add-screen-element-dialog" class="dialog-backdrop hidden">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h3 class="dialog-title">Add Screen Element</h3>
+      </div>
+      <div class="dialog-body">
+        <div class="form-group">
+          <label for="screen-element-type" class="form-label">Element Type</label>
+          <select id="screen-element-type" class="form-select">
+            <option value="text">Text</option>
+            <option value="line">Line</option>
+            <option value="rectangle">Rectangle</option>
+            <option value="circle">Circle</option>
+          </select>
+        </div>
+        <div id="text-element-options">
+          <div class="form-group">
+            <label for="screen-element-text" class="form-label">Text</label>
+            <input type="text" id="screen-element-text" class="form-input" placeholder="Text content">
+          </div>
+          <div class="form-group">
+            <label for="screen-element-font" class="form-label">Font</label>
+            <select id="screen-element-font" class="form-select">
+              <option value="u8g2_font_6x10_tf">6x10 Regular</option>
+              <option value="u8g2_font_6x13_tf">6x13 Regular</option>
+              <option value="u8g2_font_7x13_tf">7x13 Regular</option>
+              <option value="u8g2_font_9x15_tf">9x15 Regular</option>
+              <option value="u8g2_font_9x18_tf">9x18 Regular</option>
+              <option value="u8g2_font_10x20_tf">10x20 Regular</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="screen-element-x" class="form-label">X Position</label>
+          <input type="number" id="screen-element-x" class="form-input" value="0" min="0">
+        </div>
+        <div class="form-group">
+          <label for="screen-element-y" class="form-label">Y Position</label>
+          <input type="number" id="screen-element-y" class="form-input" value="0" min="0">
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn btn-outline" onclick="hideDialog('add-screen-element-dialog')">Cancel</button>
+        <button class="btn btn-primary" onclick="addScreenElement()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <script>
+    // ===== Main Application Logic =====
+    
+    // Global state
+    let state = {
+      project: null,
+      selectedMenuItemId: null,
+      selectedScreenElementId: null,
+      activeTab: 'menu',
+      scrollDirection: 'rtl'
+    };
+    
+    // Default fonts
+    const u8g2Fonts = [
+      { name: 'u8g2_font_6x10_tf', description: '6x10 Regular', size: 10 },
+      { name: 'u8g2_font_6x13_tf', description: '6x13 Regular', size: 13 },
+      { name: 'u8g2_font_7x13_tf', description: '7x13 Regular', size: 13 },
+      { name: 'u8g2_font_9x15_tf', description: '9x15 Regular', size: 15 },
+      { name: 'u8g2_font_9x18_tf', description: '9x18 Regular', size: 18 },
+      { name: 'u8g2_font_10x20_tf', description: '10x20 Regular', size: 20 }
+    ];
+    
+    // Display type configurations
+    const DISPLAY_CONFIGS = {
+      'SSD1306_128x64': { width: 128, height: 64, name: 'SSD1306 128x64' },
+      'SSD1306_128x32': { width: 128, height: 32, name: 'SSD1306 128x32' },
+      'SH1106_128x64': { width: 128, height: 64, name: 'SH1106 128x64' },
+      'SSD1309_128x64': { width: 128, height: 64, name: 'SSD1309 128x64' }
+    };
+    
+    // ===== Initialize Application =====
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize the project
+      createDefaultProject();
+      
+      // Set up event listeners
+      setupEventListeners();
+      
+      // Render the UI initially
+      renderUI();
+    });
+    
+    function createDefaultProject() {
+      state.project = {
+        id: generateId(),
+        name: 'New OLED Menu Project',
+        displayType: 'SSD1306_128x64',
+        width: 128,
+        height: 64,
+        menuItems: [
+          {
+            id: generateId(),
+            label: 'Big Knob',
+            iconPath: 'icon:knob',
+            font: 'u8g2_font_6x12_tr',
+            screenElements: []
+          },
+          {
+            id: generateId(),
+            label: 'Park Sensor',
+            iconPath: 'icon:sensor',
+            font: 'u8g2_font_6x12_tr',
+            screenElements: []
+          },
+          {
+            id: generateId(),
+            label: 'Turbo Gauge',
+            iconPath: 'icon:gauge',
+            font: 'u8g2_font_6x12_tr',
+            screenElements: []
+          }
+        ],
+        selectedIndex: 1, // Default to second item (Park Sensor)
+        font: 'u8g2_font_6x12_tr',
+        scrollDirection: 'rtl'
+      };
+    }
+    
+    function setupEventListeners() {
+      // Tab switching
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          switchTab(tab.dataset.tab);
+        });
+      });
+      
+      // Project management buttons
+      document.getElementById('new-project-btn').addEventListener('click', () => {
+        showDialog('new-project-dialog');
+      });
+      
+      document.getElementById('save-project-btn').addEventListener('click', saveProject);
+      
+      document.getElementById('load-project-btn').addEventListener('click', () => {
+        loadSavedProjectsList();
+        showDialog('load-project-dialog');
+      });
+      
+      // Menu item management
+      document.getElementById('add-menu-item-btn').addEventListener('click', () => {
+        showDialog('add-menu-item-dialog');
+      });
+      
+      // Screen element management
+      document.getElementById('add-screen-element-btn').addEventListener('click', () => {
+        if (!state.selectedMenuItemId) {
+          showToast('Please select a menu item first', 'error');
+          return;
+        }
+        showDialog('add-screen-element-dialog');
+      });
+      
+      // Display type change
+      document.getElementById('display-type').addEventListener('change', (e) => {
+        const displayType = e.target.value;
+        state.project.displayType = displayType;
+        state.project.width = DISPLAY_CONFIGS[displayType].width;
+        state.project.height = DISPLAY_CONFIGS[displayType].height;
+        
+        // Update canvas dimensions
+        const canvas = document.getElementById('oled-preview');
+        canvas.width = state.project.width;
+        canvas.height = state.project.height;
+        
+        renderUI();
+        showToast(`Display changed to ${DISPLAY_CONFIGS[displayType].name}`);
+      });
+      
+      // Scroll direction toggle
+      document.getElementById('scroll-direction').addEventListener('change', (e) => {
+        const direction = e.target.checked ? 'ltr' : 'rtl';
+        state.scrollDirection = direction;
+        state.project.scrollDirection = direction;
+        document.getElementById('scroll-direction-text').textContent = direction === 'ltr' ? 'Left→Right' : 'Right→Left';
+        renderUI();
+        showToast(`Text scroll direction changed to ${direction === 'ltr' ? 'Left to Right' : 'Right to Left'}`);
+      });
+    }
+    
+    // ===== UI Rendering Functions =====
+    
+    function renderUI() {
+      renderMenuItems();
+      renderOLEDPreview();
+      
+      if (state.activeTab === 'menu') {
+        renderMenuItemEditor();
+      } else if (state.activeTab === 'screen') {
+        renderScreenElements();
+        renderScreenElementEditor();
+      } else if (state.activeTab === 'export') {
+        renderCodeExport();
+      }
+    }
+    
+    function renderMenuItems() {
+      const container = document.getElementById('menu-items-list');
+      container.innerHTML = '';
+      
+      state.project.menuItems.forEach((item, index) => {
+        const el = document.createElement('div');
+        el.className = `menu-item flex items-center justify-between ${item.id === state.selectedMenuItemId ? 'selected' : ''}`;
+        el.dataset.id = item.id;
+        
+        let iconHtml = '';
+        if (item.iconPath && item.iconPath !== 'icon:none') {
+          const iconName = item.iconPath.split(':')[1];
+          iconHtml = `<span class="text-blue-500 mr-2">[${iconName}]</span>`;
+        }
+        
+        el.innerHTML = `
+          <div class="flex items-center">
+            ${iconHtml}
+            <span>${item.label}</span>
+          </div>
+          <div class="flex items-center">
+            <button class="text-red-500 hover:text-red-700" data-action="delete">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        `;
+        
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('[data-action="delete"]')) {
+            deleteMenuItem(item.id);
+          } else {
+            selectMenuItem(item.id);
+          }
+        });
+        
+        container.appendChild(el);
+      });
+    }
+    
+    function renderMenuItemEditor() {
+      const container = document.getElementById('menu-item-editor');
+      const noItemSelectedMsg = document.getElementById('no-menu-item-selected');
+      
+      if (!state.selectedMenuItemId) {
+        container.innerHTML = '';
+        noItemSelectedMsg.classList.remove('hidden');
+        return;
+      }
+      
+      noItemSelectedMsg.classList.add('hidden');
+      
+      const item = state.project.menuItems.find(i => i.id === state.selectedMenuItemId);
+      if (!item) return;
+      
+      container.innerHTML = `
+        <div class="form-group">
+          <label for="edit-menu-item-label" class="form-label">Label</label>
+          <input type="text" id="edit-menu-item-label" class="form-input" value="${item.label}">
+        </div>
+        <div class="form-group">
+          <label for="edit-menu-item-icon" class="form-label">Icon</label>
+          <select id="edit-menu-item-icon" class="form-select">
+            <option value="icon:none" ${item.iconPath === 'icon:none' ? 'selected' : ''}>None</option>
+            <option value="icon:knob" ${item.iconPath === 'icon:knob' ? 'selected' : ''}>Knob</option>
+            <option value="icon:gauge" ${item.iconPath === 'icon:gauge' ? 'selected' : ''}>Gauge</option>
+            <option value="icon:sensor" ${item.iconPath === 'icon:sensor' ? 'selected' : ''}>Sensor</option>
+            <option value="icon:settings" ${item.iconPath === 'icon:settings' ? 'selected' : ''}>Settings</option>
+            <option value="icon:wifi" ${item.iconPath === 'icon:wifi' ? 'selected' : ''}>WiFi</option>
+            <option value="icon:bluetooth" ${item.iconPath === 'icon:bluetooth' ? 'selected' : ''}>Bluetooth</option>
+            <option value="icon:temperature" ${item.iconPath === 'icon:temperature' ? 'selected' : ''}>Temperature</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-menu-item-font" class="form-label">Font</label>
+          <select id="edit-menu-item-font" class="form-select">
+            ${u8g2Fonts.map(font => 
+              `<option value="${font.name}" ${item.font === font.name ? 'selected' : ''}>${font.description}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <button id="update-menu-item-btn" class="btn btn-primary w-full">Save Changes</button>
+      `;
+      
+      // Add event listener to update button
+      document.getElementById('update-menu-item-btn').addEventListener('click', () => {
+        updateMenuItem();
+      });
+      
+      // Add event listeners to form fields for live preview
+      ['edit-menu-item-label', 'edit-menu-item-icon', 'edit-menu-item-font'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+          updateMenuItem();
+        });
+      });
+    }
+    
+    function renderScreenElements() {
+      const container = document.getElementById('screen-elements-list');
+      container.innerHTML = '';
+      
+      if (!state.selectedMenuItemId) {
+        container.innerHTML = '<p class="text-gray-500">Select a menu item first</p>';
+        return;
+      }
+      
+      const menuItem = state.project.menuItems.find(item => item.id === state.selectedMenuItemId);
+      if (!menuItem) return;
+      
+      if (menuItem.screenElements.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No screen elements added yet</p>';
+        return;
+      }
+      
+      menuItem.screenElements.forEach(element => {
+        const el = document.createElement('div');
+        el.className = `menu-item flex items-center justify-between ${element.id === state.selectedScreenElementId ? 'selected' : ''}`;
+        el.dataset.id = element.id;
+        
+        let elementPreview = '';
+        if (element.type === 'text') {
+          elementPreview = `<span class="text-sm font-mono">"${element.text.substring(0, 20)}${element.text.length > 20 ? '...' : ''}"</span>`;
+        } else if (element.type === 'line') {
+          elementPreview = `<span class="text-sm">Line (${element.x1},${element.y1}) to (${element.x2},${element.y2})</span>`;
+        } else if (element.type === 'rectangle') {
+          elementPreview = `<span class="text-sm">Rectangle (${element.x},${element.y}) ${element.width}x${element.height}</span>`;
+        } else if (element.type === 'circle') {
+          elementPreview = `<span class="text-sm">Circle (${element.x},${element.y}) r=${element.radius}</span>`;
+        }
+        
+        el.innerHTML = `
+          <div class="flex items-center">
+            <span class="mr-2">${element.type}:</span>
+            ${elementPreview}
+          </div>
+          <div class="flex items-center">
+            <button class="text-red-500 hover:text-red-700" data-action="delete">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        `;
+        
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('[data-action="delete"]')) {
+            deleteScreenElement(element.id);
+          } else {
+            selectScreenElement(element.id);
+          }
+        });
+        
+        container.appendChild(el);
+      });
+    }
+    
+    function renderScreenElementEditor() {
+      const container = document.getElementById('screen-element-editor');
+      const noElementSelectedMsg = document.getElementById('no-screen-element-selected');
+      
+      if (!state.selectedScreenElementId || !state.selectedMenuItemId) {
+        container.innerHTML = '';
+        noElementSelectedMsg.classList.remove('hidden');
+        return;
+      }
+      
+      const menuItem = state.project.menuItems.find(item => item.id === state.selectedMenuItemId);
+      if (!menuItem) return;
+      
+      const element = menuItem.screenElements.find(el => el.id === state.selectedScreenElementId);
+      if (!element) {
+        noElementSelectedMsg.classList.remove('hidden');
+        return;
+      }
+      
+      noElementSelectedMsg.classList.add('hidden');
+      
+      let editorHtml = '';
+      
+      if (element.type === 'text') {
+        editorHtml = `
+          <div class="form-group">
+            <label for="edit-element-text" class="form-label">Text</label>
+            <input type="text" id="edit-element-text" class="form-input" value="${element.text}">
+          </div>
+          <div class="form-group">
+            <label for="edit-element-font" class="form-label">Font</label>
+            <select id="edit-element-font" class="form-select">
+              ${u8g2Fonts.map(font => 
+                `<option value="${font.name}" ${element.font === font.name ? 'selected' : ''}>${font.description}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="edit-element-x" class="form-label">X Position</label>
+              <input type="number" id="edit-element-x" class="form-input" value="${element.x}" min="0">
+            </div>
+            <div class="form-group">
+              <label for="edit-element-y" class="form-label">Y Position</label>
+              <input type="number" id="edit-element-y" class="form-input" value="${element.y}" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="edit-element-data-type" class="form-label">Data Type (Optional)</label>
+            <select id="edit-element-data-type" class="form-select">
+              <option value="">None (Static Text)</option>
+              <option value="string" ${element.dataType === 'string' ? 'selected' : ''}>String</option>
+              <option value="int" ${element.dataType === 'int' ? 'selected' : ''}>Integer</option>
+              <option value="float" ${element.dataType === 'float' ? 'selected' : ''}>Float</option>
+            </select>
+          </div>
+          ${element.dataType ? `
+          <div class="form-group">
+            <label for="edit-element-data-variable" class="form-label">Variable Name</label>
+            <input type="text" id="edit-element-data-variable" class="form-input" value="${element.dataVariable || ''}">
+          </div>
+          ` : ''}
+        `;
+      } else if (element.type === 'line') {
+        editorHtml = `
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="edit-element-x1" class="form-label">Start X</label>
+              <input type="number" id="edit-element-x1" class="form-input" value="${element.x1}" min="0">
+            </div>
+            <div class="form-group">
+              <label for="edit-element-y1" class="form-label">Start Y</label>
+              <input type="number" id="edit-element-y1" class="form-input" value="${element.y1}" min="0">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="edit-element-x2" class="form-label">End X</label>
+              <input type="number" id="edit-element-x2" class="form-input" value="${element.x2}" min="0">
+            </div>
+            <div class="form-group">
+              <label for="edit-element-y2" class="form-label">End Y</label>
+              <input type="number" id="edit-element-y2" class="form-input" value="${element.y2}" min="0">
+            </div>
+          </div>
+        `;
+      } else if (element.type === 'rectangle') {
+        editorHtml = `
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="edit-element-x" class="form-label">X Position</label>
+              <input type="number" id="edit-element-x" class="form-input" value="${element.x}" min="0">
+            </div>
+            <div class="form-group">
+              <label for="edit-element-y" class="form-label">Y Position</label>
+              <input type="number" id="edit-element-y" class="form-input" value="${element.y}" min="0">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="edit-element-width" class="form-label">Width</label>
+              <input type="number" id="edit-element-width" class="form-input" value="${element.width}" min="1">
+            </div>
+            <div class="form-group">
+              <label for="edit-element-height" class="form-label">Height</label>
+              <input type="number" id="edit-element-height" class="form-input" value="${element.height}" min="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label flex items-center">
+              <input type="checkbox" id="edit-element-filled" ${element.filled ? 'checked' : ''}>
+              <span class="ml-2">Filled</span>
+            </label>
+          </div>
+        `;
+      } else if (element.type === 'circle') {
+        editorHtml = `
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="edit-element-x" class="form-label">X Position</label>
+              <input type="number" id="edit-element-x" class="form-input" value="${element.x}" min="0">
+            </div>
+            <div class="form-group">
+              <label for="edit-element-y" class="form-label">Y Position</label>
+              <input type="number" id="edit-element-y" class="form-input" value="${element.y}" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="edit-element-radius" class="form-label">Radius</label>
+            <input type="number" id="edit-element-radius" class="form-input" value="${element.radius}" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label flex items-center">
+              <input type="checkbox" id="edit-element-filled" ${element.filled ? 'checked' : ''}>
+              <span class="ml-2">Filled</span>
+            </label>
+          </div>
+        `;
+      }
+      
+      container.innerHTML = `
+        ${editorHtml}
+        <button id="update-screen-element-btn" class="btn btn-primary w-full">Save Changes</button>
+      `;
+      
+      // Add event listener to update button
+      document.getElementById('update-screen-element-btn').addEventListener('click', () => {
+        updateScreenElement();
+      });
+    }
+    
+    function renderOLEDPreview() {
+      const canvas = document.getElementById('oled-preview');
+      const ctx = canvas.getContext('2d');
+      
+      // Set canvas dimensions based on display type
+      canvas.width = state.project.width;
+      canvas.height = state.project.height;
+      
+      // Clear canvas
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      if (state.activeTab === 'menu') {
+        // Render the menu
+        renderMenuToCanvas(ctx, state.project);
+      } else if (state.activeTab === 'screen' && state.selectedMenuItemId) {
+        // Render the screen editor view
+        const menuItem = state.project.menuItems.find(item => item.id === state.selectedMenuItemId);
+        if (menuItem) {
+          renderScreenToCanvas(ctx, menuItem, state.project.width, state.project.height);
+        }
+      }
+    }
+    
+    function renderMenuToCanvas(ctx, project) {
+      // Constants for rendering
+      const ITEM_HEIGHT = 16;
+      const ICON_SIZE = 19; // Larger icon per user request
+      const MENU_HIGHLIGHT_Y = Math.floor(project.height / 2) - Math.floor(ITEM_HEIGHT / 2);
+      
+      // Clear canvas
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, project.width, project.height);
+      
+      // Get visible menu items
+      const visibleItems = getVisibleMenuItems(project.menuItems, project.selectedIndex, project.height, ITEM_HEIGHT);
+      
+      // Draw menu items
+      visibleItems.forEach(({ item, position, highlighted }, index) => {
+        const y = position === 'middle' ? MENU_HIGHLIGHT_Y : position === 'top' ? MENU_HIGHLIGHT_Y - ITEM_HEIGHT : MENU_HIGHLIGHT_Y + ITEM_HEIGHT;
+        
+        // Calculate text position (with or without icon)
+        const hasIcon = item.iconPath && item.iconPath !== 'icon:none';
+        const textX = hasIcon ? ICON_SIZE + 6 : 2;
+        const textY = y + 12; // Font baseline position
+        
+        // Draw highlight box if this is the selected item
+        if (highlighted) {
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(0, y, project.width, ITEM_HEIGHT);
+        }
+        
+        // Draw icon if available
+        if (hasIcon) {
+          drawIcon(ctx, item.iconPath, 2, y + 2, ICON_SIZE);
+        }
+        
+        // Draw text
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px monospace';
+        ctx.fillText(item.label, textX, textY);
+      });
+    }
+    
+    function renderScreenToCanvas(ctx, menuItem, width, height) {
+      // Clear canvas
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Draw screen elements
+      menuItem.screenElements.forEach(element => {
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#fff';
+        
+        if (element.type === 'text') {
+          const fontSize = parseInt(element.font.split('_')[2].replace(/[^\d]/g, ''));
+          ctx.font = `${fontSize}px monospace`;
+          ctx.fillText(element.text, element.x, element.y);
+        } else if (element.type === 'line') {
+          ctx.beginPath();
+          ctx.moveTo(element.x1, element.y1);
+          ctx.lineTo(element.x2, element.y2);
+          ctx.stroke();
+        } else if (element.type === 'rectangle') {
+          if (element.filled) {
+            ctx.fillRect(element.x, element.y, element.width, element.height);
+          } else {
+            ctx.strokeRect(element.x, element.y, element.width, element.height);
+          }
+        } else if (element.type === 'circle') {
+          ctx.beginPath();
+          ctx.arc(element.x, element.y, element.radius, 0, Math.PI * 2);
+          if (element.filled) {
+            ctx.fill();
+          } else {
+            ctx.stroke();
+          }
+        }
+      });
+      
+      // Highlight selected element
+      if (state.selectedScreenElementId) {
+        const selectedElement = menuItem.screenElements.find(element => element.id === state.selectedScreenElementId);
+        if (selectedElement) {
+          ctx.strokeStyle = '#ff0';
+          ctx.lineWidth = 1;
+          
+          if (selectedElement.type === 'text') {
+            const fontSize = parseInt(selectedElement.font.split('_')[2].replace(/[^\d]/g, ''));
+            const textWidth = ctx.measureText(selectedElement.text).width;
+            const textHeight = fontSize;
+            ctx.strokeRect(selectedElement.x - 2, selectedElement.y - textHeight, textWidth + 4, textHeight + 4);
+          } else if (selectedElement.type === 'line') {
+            ctx.beginPath();
+            ctx.moveTo(selectedElement.x1, selectedElement.y1);
+            ctx.lineTo(selectedElement.x2, selectedElement.y2);
+            ctx.stroke();
+            
+            // Draw squares at endpoints
+            ctx.fillStyle = '#ff0';
+            ctx.fillRect(selectedElement.x1 - 2, selectedElement.y1 - 2, 5, 5);
+            ctx.fillRect(selectedElement.x2 - 2, selectedElement.y2 - 2, 5, 5);
+          } else if (selectedElement.type === 'rectangle') {
+            ctx.strokeRect(selectedElement.x, selectedElement.y, selectedElement.width, selectedElement.height);
+          } else if (selectedElement.type === 'circle') {
+            ctx.beginPath();
+            ctx.arc(selectedElement.x, selectedElement.y, selectedElement.radius, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+    
+    function renderCodeExport() {
+      document.getElementById('c-header-code').textContent = generateHeader(state.project);
+      document.getElementById('c-implementation-code').textContent = generateImplementation(state.project);
+      document.getElementById('arduino-code').textContent = generateArduinoSketch(state.project);
+    }
+    
+    // ===== Helper Functions =====
+    
+    function getVisibleMenuItems(menuItems, selectedIndex, displayHeight, itemHeight) {
+      if (menuItems.length === 0) return [];
+      
+      // Calculate how many items can be shown
+      const maxVisibleItems = Math.min(3, Math.floor(displayHeight / itemHeight));
+      
+      // Ensure selected index is valid
+      const validIndex = Math.max(0, Math.min(selectedIndex, menuItems.length - 1));
+      
+      // Get the selected item
+      const selectedItem = menuItems[validIndex];
+      
+      const result = [];
+      
+      // Always show selected item in the middle
+      result.push({
+        item: selectedItem,
+        position: 'middle',
+        highlighted: true
+      });
+      
+      // Show item above if available
+      if (validIndex > 0) {
+        const prevItem = menuItems[validIndex - 1];
+        result.push({
+          item: prevItem,
+          position: 'top',
+          highlighted: false
+        });
+      }
+      
+      // Show item below if available
+      if (validIndex < menuItems.length - 1) {
+        const nextItem = menuItems[validIndex + 1];
+        result.push({
+          item: nextItem,
+          position: 'bottom',
+          highlighted: false
+        });
+      }
+      
+      return result;
+    }
+    
+    function drawIcon(ctx, iconPath, x, y, size) {
+      const iconType = iconPath.split(':')[1];
+      ctx.fillStyle = '#fff';
+      
+      // Simple icon representations
+      switch (iconType) {
+        case 'knob':
+          ctx.beginPath();
+          ctx.arc(x + size/2, y + size/2, size/2 - 2, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x + size/2, y + size/2);
+          ctx.lineTo(x + size/2, y + 3);
+          ctx.stroke();
+          break;
+          
+        case 'gauge':
+          ctx.beginPath();
+          ctx.arc(x + size/2, y + size/2, size/2 - 2, Math.PI * 0.8, Math.PI * 2.2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x + size/2, y + size/2);
+          ctx.lineTo(x + size * 0.8, y + size * 0.3);
+          ctx.stroke();
+          break;
+          
+        case 'sensor':
+          ctx.strokeRect(x + 2, y + 2, size - 4, size - 4);
+          ctx.beginPath();
+          ctx.arc(x + size/2, y + size/2, size/4, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+          
+        case 'settings':
+          ctx.beginPath();
+          ctx.arc(x + size/2, y + size/2, size/3, 0, Math.PI * 2);
+          ctx.stroke();
+          for (let i = 0; i < 6; i++) {
+            const angle = i * Math.PI / 3;
+            const x1 = x + size/2 + Math.cos(angle) * (size/3 + 1);
+            const y1 = y + size/2 + Math.sin(angle) * (size/3 + 1);
+            const x2 = x + size/2 + Math.cos(angle) * (size/2 - 1);
+            const y2 = y + size/2 + Math.sin(angle) * (size/2 - 1);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+          }
+          break;
+          
+        case 'wifi':
+          for (let i = 0; i < 3; i++) {
+            const radius = (i + 1) * size/6;
+            ctx.beginPath();
+            ctx.arc(x + size/2, y + size * 0.7, radius, Math.PI, Math.PI * 2);
+            ctx.stroke();
+          }
+          break;
+          
+        case 'bluetooth':
+          ctx.beginPath();
+          ctx.moveTo(x + size/3, y + 2);
+          ctx.lineTo(x + size * 2/3, y + size/2);
+          ctx.lineTo(x + size/3, y + size - 2);
+          ctx.lineTo(x + size/3, y + 2);
+          ctx.lineTo(x + size * 2/3, y + size/2);
+          ctx.stroke();
+          break;
+          
+        case 'temperature':
+          const thermWidth = size/4;
+          ctx.beginPath();
+          ctx.arc(x + size/2, y + size * 0.7, thermWidth + 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(x + size/2 - thermWidth/2, y + size * 0.3, thermWidth, size * 0.4);
+          ctx.fillStyle = '#000';
+          ctx.fillRect(x + size/2 - thermWidth/4, y + size * 0.4, thermWidth/2, size * 0.2);
+          break;
+          
+        default:
+          // Draw a question mark for unknown icons
+          ctx.font = `${size * 0.8}px sans-serif`;
+          ctx.fillText('?', x + size/4, y + size * 0.8);
+      }
+    }
+    
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      
+      // Update tab UI
+      document.querySelectorAll('.tab').forEach(tab => {
+        if (tab.dataset.tab === tabName) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      
+      // Update content UI
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+      
+      renderUI();
+    }
+    
+    function showDialog(dialogId) {
+      document.getElementById(dialogId).classList.remove('hidden');
+    }
+    
+    function hideDialog(dialogId) {
+      document.getElementById(dialogId).classList.add('hidden');
+    }
+    
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <div class="toast-title">${type === 'success' ? 'Success' : 'Error'}</div>
+        <div>${message}</div>
+      `;
+      
+      container.appendChild(toast);
+      
+      // Auto remove toast after 3 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          container.removeChild(toast);
+        }, 300);
+      }, 3000);
+    }
+    
+    function generateId() {
+      return Math.random().toString(36).substring(2, 15);
+    }
+    
+    // ===== Data Manipulation Functions =====
+    
+    function createNewProject() {
+      const nameInput = document.getElementById('new-project-name');
+      const name = nameInput.value.trim() || 'New OLED Menu Project';
+      
+      state.project = {
+        id: generateId(),
+        name,
+        displayType: 'SSD1306_128x64',
+        width: 128,
+        height: 64,
+        menuItems: [],
+        selectedIndex: 0,
+        font: 'u8g2_font_6x12_tr',
+        scrollDirection: state.scrollDirection || 'rtl'
+      };
+      
+      state.selectedMenuItemId = null;
+      state.selectedScreenElementId = null;
+      
+      hideDialog('new-project-dialog');
+      nameInput.value = '';
+      
+      renderUI();
+      showToast(`Created new project: ${name}`);
+    }
+    
+    function saveProject() {
+      try {
+        // Save to localStorage
+        const projects = JSON.parse(localStorage.getItem('oled-menu-projects') || '[]');
+        
+        // Check if project already exists and update it
+        const existingIndex = projects.findIndex(p => p.id === state.project.id);
+        if (existingIndex >= 0) {
+          projects[existingIndex] = state.project;
+        } else {
+          projects.push(state.project);
+        }
+        
+        localStorage.setItem('oled-menu-projects', JSON.stringify(projects));
+        showToast(`Project "${state.project.name}" saved successfully`);
+      } catch (error) {
+        console.error('Error saving project:', error);
+        showToast('Failed to save project', 'error');
+      }
+    }
+    
+    function loadSavedProjectsList() {
+      const container = document.getElementById('saved-projects-list');
+      const noProjectsMsg = document.getElementById('no-saved-projects');
+      
+      try {
+        const projects = JSON.parse(localStorage.getItem('oled-menu-projects') || '[]');
+        
+        if (projects.length === 0) {
+          container.innerHTML = '';
+          noProjectsMsg.classList.remove('hidden');
+          return;
+        }
+        
+        noProjectsMsg.classList.add('hidden');
+        container.innerHTML = '';
+        
+        projects.forEach(project => {
+          const projectEl = document.createElement('div');
+          projectEl.className = 'p-3 border rounded-md hover:bg-gray-100 cursor-pointer flex justify-between items-center';
+          projectEl.innerHTML = `
+            <span>${project.name}</span>
+            <div class="flex items-center">
+              <button class="text-blue-500 hover:text-blue-700 mr-2" data-action="load">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </button>
+              <button class="text-red-500 hover:text-red-700" data-action="delete">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          `;
+          
+          projectEl.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-action]');
+            if (target) {
+              const action = target.dataset.action;
+              if (action === 'load') {
+                loadProject(project.id);
+              } else if (action === 'delete') {
+                deleteProject(project.id);
+              }
+            } else {
+              loadProject(project.id);
+            }
+          });
+          
+          container.appendChild(projectEl);
+        });
+      } catch (error) {
+        console.error('Error loading projects:', error);
+        showToast('Failed to load projects', 'error');
+      }
+    }
+    
+    function loadProject(projectId) {
+      try {
+        const projects = JSON.parse(localStorage.getItem('oled-menu-projects') || '[]');
+        const project = projects.find(p => p.id === projectId);
+        
+        if (!project) {
+          showToast('Project not found', 'error');
+          return;
+        }
+        
+        state.project = project;
+        state.selectedMenuItemId = project.menuItems.length > 0 ? project.menuItems[0].id : null;
+        state.selectedScreenElementId = null;
+        state.scrollDirection = project.scrollDirection || 'rtl';
+        
+        // Update scroll direction toggle
+        const scrollDirToggle = document.getElementById('scroll-direction');
+        scrollDirToggle.checked = state.scrollDirection === 'ltr';
+        document.getElementById('scroll-direction-text').textContent = 
+          state.scrollDirection === 'ltr' ? 'Left→Right' : 'Right→Left';
+        
+        // Update display type select
+        document.getElementById('display-type').value = project.displayType;
+        
+        hideDialog('load-project-dialog');
+        renderUI();
+        showToast(`Loaded project: ${project.name}`);
+      } catch (error) {
+        console.error('Error loading project:', error);
+        showToast('Failed to load project', 'error');
+      }
+    }
+    
+    function deleteProject(projectId) {
+      try {
+        const projects = JSON.parse(localStorage.getItem('oled-menu-projects') || '[]');
+        const projectIndex = projects.findIndex(p => p.id === projectId);
+        
+        if (projectIndex === -1) {
+          showToast('Project not found', 'error');
+          return;
+        }
+        
+        const projectName = projects[projectIndex].name;
+        projects.splice(projectIndex, 1);
+        localStorage.setItem('oled-menu-projects', JSON.stringify(projects));
+        
+        loadSavedProjectsList();
+        showToast(`Deleted project: ${projectName}`);
+      } catch (error) {
+        console.error('Error deleting project:', error);
+        showToast('Failed to delete project', 'error');
+      }
+    }
+    
+    function addMenuItem() {
+      const labelInput = document.getElementById('menu-item-label');
+      const iconSelect = document.getElementById('menu-item-icon');
+      
+      const label = labelInput.value.trim() || 'New Item';
+      const iconPath = iconSelect.value;
+      
+      const newItem = {
+        id: generateId(),
+        label,
+        iconPath,
+        font: 'u8g2_font_6x12_tr',
+        screenElements: []
+      };
+      
+      state.project.menuItems.push(newItem);
+      state.selectedMenuItemId = newItem.id;
+      
+      // Reset form
+      labelInput.value = '';
+      iconSelect.value = 'icon:none';
+      
+      hideDialog('add-menu-item-dialog');
+      renderUI();
+      showToast(`Added menu item: ${label}`);
+    }
+    
+    function updateMenuItem() {
+      if (!state.selectedMenuItemId) return;
+      
+      const index = state.project.menuItems.findIndex(item => item.id === state.selectedMenuItemId);
+      if (index === -1) return;
+      
+      const labelInput = document.getElementById('edit-menu-item-label');
+      const iconSelect = document.getElementById('edit-menu-item-icon');
+      const fontSelect = document.getElementById('edit-menu-item-font');
+      
+      state.project.menuItems[index].label = labelInput.value.trim();
+      state.project.menuItems[index].iconPath = iconSelect.value;
+      state.project.menuItems[index].font = fontSelect.value;
+      
+      renderUI();
+    }
+    
+    function selectMenuItem(id) {
+      state.selectedMenuItemId = id;
+      renderUI();
+    }
+    
+    function deleteMenuItem(id) {
+      const index = state.project.menuItems.findIndex(item => item.id === id);
+      if (index === -1) return;
+      
+      const itemName = state.project.menuItems[index].label;
+      state.project.menuItems.splice(index, 1);
+      
+      if (state.selectedMenuItemId === id) {
+        state.selectedMenuItemId = state.project.menuItems.length > 0 ? state.project.menuItems[0].id : null;
+      }
+      
+      renderUI();
+      showToast(`Deleted menu item: ${itemName}`);
+    }
+    
+    function addScreenElement() {
+      if (!state.selectedMenuItemId) {
+        showToast('Please select a menu item first', 'error');
+        return;
+      }
+      
+      const menuItemIndex = state.project.menuItems.findIndex(item => item.id === state.selectedMenuItemId);
+      if (menuItemIndex === -1) return;
+      
+      const typeSelect = document.getElementById('screen-element-type');
+      const xInput = document.getElementById('screen-element-x');
+      const yInput = document.getElementById('screen-element-y');
+      
+      const type = typeSelect.value;
+      const x = parseInt(xInput.value) || 0;
+      const y = parseInt(yInput.value) || 0;
+      
+      let newElement = {
+        id: generateId(),
+        type,
+        x,
+        y
+      };
+      
+      if (type === 'text') {
+        const textInput = document.getElementById('screen-element-text');
+        const fontSelect = document.getElementById('screen-element-font');
+        
+        newElement.text = textInput.value.trim() || 'Text';
+        newElement.font = fontSelect.value;
+      } else if (type === 'line') {
+        newElement.x1 = x;
+        newElement.y1 = y;
+        newElement.x2 = x + 20;
+        newElement.y2 = y + 20;
+      } else if (type === 'rectangle') {
+        newElement.width = 20;
+        newElement.height = 10;
+        newElement.filled = false;
+      } else if (type === 'circle') {
+        newElement.radius = 10;
+        newElement.filled = false;
+      }
+      
+      state.project.menuItems[menuItemIndex].screenElements.push(newElement);
+      state.selectedScreenElementId = newElement.id;
+      
+      hideDialog('add-screen-element-dialog');
+      renderUI();
+      showToast(`Added ${type} element`);
+    }
+    
+    function updateScreenElement() {
+      if (!state.selectedMenuItemId || !state.selectedScreenElementId) return;
+      
+      const menuItemIndex = state.project.menuItems.findIndex(item => item.id === state.selectedMenuItemId);
+      if (menuItemIndex === -1) return;
+      
+      const elementIndex = state.project.menuItems[menuItemIndex].screenElements.findIndex(
+        el => el.id === state.selectedScreenElementId
+      );
+      if (elementIndex === -1) return;
+      
+      const element = state.project.menuItems[menuItemIndex].screenElements[elementIndex];
+      
+      // Update common properties
+      if (document.getElementById('edit-element-x')) {
+        element.x = parseInt(document.getElementById('edit-element-x').value) || 0;
+      }
+      
+      if (document.getElementById('edit-element-y')) {
+        element.y = parseInt(document.getElementById('edit-element-y').value) || 0;
+      }
+      
+      // Update type-specific properties
+      if (element.type === 'text') {
+        element.text = document.getElementById('edit-element-text').value.trim();
+        element.font = document.getElementById('edit-element-font').value;
+        
+        const dataTypeSelect = document.getElementById('edit-element-data-type');
+        element.dataType = dataTypeSelect.value || undefined;
+        
+        if (element.dataType && document.getElementById('edit-element-data-variable')) {
+          element.dataVariable = document.getElementById('edit-element-data-variable').value.trim() || undefined;
+        } else {
+          delete element.dataVariable;
+        }
+      } else if (element.type === 'line') {
+        element.x1 = parseInt(document.getElementById('edit-element-x1').value) || 0;
+        element.y1 = parseInt(document.getElementById('edit-element-y1').value) || 0;
+        element.x2 = parseInt(document.getElementById('edit-element-x2').value) || 0;
+        element.y2 = parseInt(document.getElementById('edit-element-y2').value) || 0;
+      } else if (element.type === 'rectangle') {
+        element.width = parseInt(document.getElementById('edit-element-width').value) || 1;
+        element.height = parseInt(document.getElementById('edit-element-height').value) || 1;
+        element.filled = document.getElementById('edit-element-filled').checked;
+      } else if (element.type === 'circle') {
+        element.radius = parseInt(document.getElementById('edit-element-radius').value) || 1;
+        element.filled = document.getElementById('edit-element-filled').checked;
+      }
+      
+      renderUI();
+      showToast(`Updated ${element.type} element`);
+    }
+    
+    function selectScreenElement(id) {
+      state.selectedScreenElementId = id;
+      renderUI();
+    }
+    
+    function deleteScreenElement(id) {
+      if (!state.selectedMenuItemId) return;
+      
+      const menuItemIndex = state.project.menuItems.findIndex(item => item.id === state.selectedMenuItemId);
+      if (menuItemIndex === -1) return;
+      
+      const elementIndex = state.project.menuItems[menuItemIndex].screenElements.findIndex(el => el.id === id);
+      if (elementIndex === -1) return;
+      
+      const elementType = state.project.menuItems[menuItemIndex].screenElements[elementIndex].type;
+      state.project.menuItems[menuItemIndex].screenElements.splice(elementIndex, 1);
+      
+      if (state.selectedScreenElementId === id) {
+        state.selectedScreenElementId = null;
+      }
+      
+      renderUI();
+      showToast(`Deleted ${elementType} element`);
+    }
+    
+    function copyCode(elementId) {
+      const codeElement = document.getElementById(elementId);
+      const textToCopy = codeElement.textContent;
+      
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+          showToast('Code copied to clipboard');
+        })
+        .catch(err => {
+          console.error('Failed to copy code:', err);
+          showToast('Failed to copy code', 'error');
+        });
+    }
+    
+    // ===== Code Generation Functions =====
+    
+    function generateHeader(project) {
+      const guardName = `${project.name.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}_H`;
+      
+      return `/**
+ * OLED Menu System Header
+ * 
+ * Project: ${project.name}
+ * Display: ${project.displayType} (${project.width}x${project.height})
+ * 
+ * Automatically generated with OLED Menu Builder
+ * https://github.com/sudo-atharva
+ */
+
+#ifndef ${guardName}
+#define ${guardName}
+
+#include <U8g2lib.h>
+
+// Menu Configuration
+#define MENU_ITEMS_COUNT ${project.menuItems.length}
+#define DISPLAY_WIDTH ${project.width}
+#define DISPLAY_HEIGHT ${project.height}
+
+// Menu Item IDs
+enum MenuItemID {
+${project.menuItems.map((item, index) => `  MENU_ITEM_${item.label.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()} = ${index}`).join(',\n')}
+};
+
+// Function declarations
+void setupMenu(U8G2 *u8g2);
+void drawMenu(U8G2 *u8g2, uint8_t selectedIndex);
+void drawMenuScreen(U8G2 *u8g2, uint8_t menuItemId);
+void handleMenuAction(uint8_t menuItemId);
+
+${project.menuItems.map(item => `void drawScreen_${item.label.replace(/[^a-zA-Z0-9]/g, '_')}(U8G2 *u8g2);`).join('\n')}
+
+#endif // ${guardName}
+`;
+    }
+    
+    function generateImplementation(project) {
+      return `/**
+ * OLED Menu System Implementation
+ * 
+ * Project: ${project.name}
+ * Display: ${project.displayType} (${project.width}x${project.height})
+ * 
+ * Automatically generated with OLED Menu Builder
+ * https://github.com/sudo-atharva
+ */
+
+#include <U8g2lib.h>
+#include "${project.name.replace(/[^a-zA-Z0-9]/g, '_')}.h"
+
+// Menu item labels
+const char* menuLabels[MENU_ITEMS_COUNT] = {
+${project.menuItems.map(item => `  "${item.label}"`).join(',\n')}
+};
+
+// Setup the menu system
+void setupMenu(U8G2 *u8g2) {
+  // Initialize the display
+  u8g2->begin();
+  u8g2->setFont(${project.font});
+  u8g2->setDrawColor(1);
+  u8g2->setFontPosTop();
+}
+
+// Draw the menu with the current selection
+void drawMenu(U8G2 *u8g2, uint8_t selectedIndex) {
+  u8g2->clearBuffer();
+  
+  // Ensure the selected index is valid
+  if (selectedIndex >= MENU_ITEMS_COUNT) {
+    selectedIndex = 0;
+  }
+  
+  // Constants for menu rendering
+  const uint8_t ITEM_HEIGHT = 16;
+  const uint8_t MIDDLE_Y = (DISPLAY_HEIGHT / 2) - (ITEM_HEIGHT / 2);
+  
+  // Draw selection box in the middle
+  u8g2->drawFrame(0, MIDDLE_Y, DISPLAY_WIDTH, ITEM_HEIGHT);
+  
+  // Draw the selected item in the middle
+  u8g2->setFont(${project.font});
+  u8g2->drawStr(4, MIDDLE_Y + 4, menuLabels[selectedIndex]);
+  
+  // Draw item above if available
+  if (selectedIndex > 0) {
+    u8g2->drawStr(4, MIDDLE_Y - ITEM_HEIGHT + 4, menuLabels[selectedIndex - 1]);
+  }
+  
+  // Draw item below if available
+  if (selectedIndex < MENU_ITEMS_COUNT - 1) {
+    u8g2->drawStr(4, MIDDLE_Y + ITEM_HEIGHT + 4, menuLabels[selectedIndex + 1]);
+  }
+  
+  u8g2->sendBuffer();
+}
+
+// Draw a specific menu screen
+void drawMenuScreen(U8G2 *u8g2, uint8_t menuItemId) {
+  u8g2->clearBuffer();
+  
+  switch (menuItemId) {
+${project.menuItems.map((item, index) => 
+`    case ${index}:
+      drawScreen_${item.label.replace(/[^a-zA-Z0-9]/g, '_')}(u8g2);
+      break;`
+).join('\n')}
+    default:
+      break;
+  }
+  
+  u8g2->sendBuffer();
+}
+
+// Handle menu selection action
+void handleMenuAction(uint8_t menuItemId) {
+  // Add any custom action code here
+  switch (menuItemId) {
+${project.menuItems.map((item, index) => 
+`    case ${index}:
+      // Handle ${item.label} action
+      break;`
+).join('\n')}
+    default:
+      break;
+  }
+}
+
+// Screen drawing functions for each menu item
+${project.menuItems.map(item => 
+`void drawScreen_${item.label.replace(/[^a-zA-Z0-9]/g, '_')}(U8G2 *u8g2) {
+  // Draw screen elements for ${item.label}
+  u8g2->setFont(${item.font || project.font});
+${item.screenElements.map(element => {
+  if (element.type === 'text') {
+    if (element.dataType) {
+      return `  // Dynamic text with data type: ${element.dataType}
+  u8g2->setFont(${element.font});
+  // Replace with actual data variable
+  u8g2->drawStr(${element.x}, ${element.y}, "Sample ${element.text}");`;
+    } else {
+      return `  u8g2->setFont(${element.font});
+  u8g2->drawStr(${element.x}, ${element.y}, "${element.text}");`;
+    }
+  } else if (element.type === 'line') {
+    return `  u8g2->drawLine(${element.x1}, ${element.y1}, ${element.x2}, ${element.y2});`;
+  } else if (element.type === 'rectangle') {
+    if (element.filled) {
+      return `  u8g2->drawBox(${element.x}, ${element.y}, ${element.width}, ${element.height});`;
+    } else {
+      return `  u8g2->drawFrame(${element.x}, ${element.y}, ${element.width}, ${element.height});`;
+    }
+  } else if (element.type === 'circle') {
+    if (element.filled) {
+      return `  u8g2->drawDisc(${element.x}, ${element.y}, ${element.radius});`;
+    } else {
+      return `  u8g2->drawCircle(${element.x}, ${element.y}, ${element.radius});`;
+    }
+  }
+  return '';
+}).join('\n')}
+}`
+).join('\n\n')}
+`;
+    }
+    
+    function generateArduinoSketch(project) {
+      return `/**
+ * OLED Menu System - Arduino Example
+ * 
+ * Project: ${project.name}
+ * Display: ${project.displayType} (${project.width}x${project.height})
+ * 
+ * This sketch demonstrates how to implement the generated menu system.
+ * Automatically generated with OLED Menu Builder
+ * https://github.com/sudo-atharva
+ */
+
+#include <Arduino.h>
+#include <U8g2lib.h>
+#include <Wire.h>
+
+// Create display instance - modify constructor for your specific display
+// This example uses SSD1306 128x64 display with I2C
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+
+// Button pins
+#define BTN_UP     2
+#define BTN_DOWN   3
+#define BTN_SELECT 4
+
+// Menu state
+uint8_t selectedIndex = 0;
+bool inMenuScreen = false;
+uint8_t currentScreen = 0;
+
+// Menu item labels
+#define MENU_ITEMS_COUNT ${project.menuItems.length}
+const char* menuLabels[MENU_ITEMS_COUNT] = {
+${project.menuItems.map(item => `  "${item.label}"`).join(',\n')}
+};
+
+void setup() {
+  // Initialize serial for debugging
+  Serial.begin(115200);
+  Serial.println(F("OLED Menu System Example"));
+  
+  // Initialize buttons
+  pinMode(BTN_UP, INPUT_PULLUP);
+  pinMode(BTN_DOWN, INPUT_PULLUP);
+  pinMode(BTN_SELECT, INPUT_PULLUP);
+  
+  // Initialize the display
+  u8g2.begin();
+  u8g2.setFont(${project.font});
+  u8g2.setFontPosTop();
+  
+  // Show initial menu
+  drawMenu();
+}
+
+void loop() {
+  // Handle button inputs with debounce
+  static unsigned long lastButtonTime = 0;
+  const unsigned long debounceTime = 200;
+  
+  if (millis() - lastButtonTime > debounceTime) {
+    // Up button
+    if (digitalRead(BTN_UP) == LOW) {
+      lastButtonTime = millis();
+      
+      if (!inMenuScreen) {
+        // In main menu, move selection up
+        if (selectedIndex > 0) {
+          selectedIndex--;
+          drawMenu();
+        }
+      }
+    }
+    
+    // Down button
+    if (digitalRead(BTN_DOWN) == LOW) {
+      lastButtonTime = millis();
+      
+      if (!inMenuScreen) {
+        // In main menu, move selection down
+        if (selectedIndex < MENU_ITEMS_COUNT - 1) {
+          selectedIndex++;
+          drawMenu();
+        }
+      }
+    }
+    
+    // Select button
+    if (digitalRead(BTN_SELECT) == LOW) {
+      lastButtonTime = millis();
+      
+      if (!inMenuScreen) {
+        // Enter the selected menu screen
+        inMenuScreen = true;
+        currentScreen = selectedIndex;
+        drawMenuScreen(currentScreen);
+      } else {
+        // Return to main menu
+        inMenuScreen = false;
+        drawMenu();
+      }
+    }
+  }
+}
+
+// Draw the menu with the current selection
+void drawMenu() {
+  u8g2.clearBuffer();
+  
+  // Constants for menu rendering
+  const uint8_t ITEM_HEIGHT = 16;
+  const uint8_t MIDDLE_Y = (DISPLAY_HEIGHT / 2) - (ITEM_HEIGHT / 2);
+  
+  // Draw selection box in the middle
+  u8g2.drawFrame(0, MIDDLE_Y, DISPLAY_WIDTH, ITEM_HEIGHT);
+  
+  // Draw the selected item in the middle
+  u8g2.drawStr(4, MIDDLE_Y + 4, menuLabels[selectedIndex]);
+  
+  // Draw item above if available
+  if (selectedIndex > 0) {
+    u8g2.drawStr(4, MIDDLE_Y - ITEM_HEIGHT + 4, menuLabels[selectedIndex - 1]);
+  }
+  
+  // Draw item below if available
+  if (selectedIndex < MENU_ITEMS_COUNT - 1) {
+    u8g2.drawStr(4, MIDDLE_Y + ITEM_HEIGHT + 4, menuLabels[selectedIndex + 1]);
+  }
+  
+  u8g2.sendBuffer();
+}
+
+// Draw a specific menu screen
+void drawMenuScreen(uint8_t menuItemId) {
+  u8g2.clearBuffer();
+  
+  switch (menuItemId) {
+${project.menuItems.map((item, index) => 
+`    case ${index}: { // ${item.label}
+      u8g2.setFont(${item.font || project.font});
+${item.screenElements.map(element => {
+  if (element.type === 'text') {
+    if (element.dataType) {
+      return `      // Dynamic text with data type: ${element.dataType}
+      u8g2.setFont(${element.font});
+      // Replace with actual data variable
+      u8g2.drawStr(${element.x}, ${element.y}, "Sample ${element.text}");`;
+    } else {
+      return `      u8g2.setFont(${element.font});
+      u8g2.drawStr(${element.x}, ${element.y}, "${element.text}");`;
+    }
+  } else if (element.type === 'line') {
+    return `      u8g2.drawLine(${element.x1}, ${element.y1}, ${element.x2}, ${element.y2});`;
+  } else if (element.type === 'rectangle') {
+    if (element.filled) {
+      return `      u8g2.drawBox(${element.x}, ${element.y}, ${element.width}, ${element.height});`;
+    } else {
+      return `      u8g2.drawFrame(${element.x}, ${element.y}, ${element.width}, ${element.height});`;
+    }
+  } else if (element.type === 'circle') {
+    if (element.filled) {
+      return `      u8g2.drawDisc(${element.x}, ${element.y}, ${element.radius});`;
+    } else {
+      return `      u8g2.drawCircle(${element.x}, ${element.y}, ${element.radius});`;
+    }
+  }
+  return '';
+}).join('\n')}
+      break;
+    }`
+).join('\n')}
+    default:
+      u8g2.drawStr(0, 0, "Invalid screen");
+      break;
+  }
+  
+  // Draw a back button indicator
+  u8g2.drawStr(0, DISPLAY_HEIGHT - 10, "Press SELECT to return");
+  
+  u8g2.sendBuffer();
+}
+`;
+    }
+  </script>
+</body>
+</html>
